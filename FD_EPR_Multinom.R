@@ -94,14 +94,13 @@ for (trait in colnames(traits)){
   epr.data$X <- droplevels(relevel(as.factor(epr.data[,trait]), ref = as.character(stats.categories[trait,1])))
   multinom.observed <- multinom(X~MONTHS+MONTHS.SQUARED, data = epr.data, maxit=800)
   multinom.null <- multinom(X~1, data = epr.data, maxit=800)
-  #multinom.factor <- multinom(X~MONTHS.FACTOR, data = epr.data, maxit=800)
+  multinom.factor <- multinom(X~MONTHS.FACTOR, data = epr.data, maxit=800)
   
   # TESTING SIGNIFICANCE
   
   linear.test <- lrtest(multinom.observed, multinom.null)
-  #all.deviance <- c(all.deviance, multinom.observed$deviance - multinom.factor$deviance)
   all.deviance <- c(all.deviance, multinom.observed$deviance)
-  #all.deviance.factor <- c(all.deviance.factor, multinom.factor$deviance)
+  all.deviance.factor <- c(all.deviance.factor, multinom.factor$deviance)
   all.df <- c(all.df, multinom.observed$edf)
   all.chi.squared <- c(all.chi.squared, linear.test$Chisq[2])
   all.p.values <- c(all.p.values, linear.test$`Pr(>Chisq)`[2])
@@ -143,7 +142,7 @@ write.csv(as.matrix(traits.predicted), file=paste(path_out, 'FD_EPR_Predicted.cs
 # RANDOMIZATIONS
 
 trait.rand.devs <- data.frame()
-number.rands <- 10
+number.rands <- 1000
 
 for (trait in rownames(stats.categories)){
   
@@ -183,10 +182,9 @@ for (trait in rownames(stats.categories)){
   trait.rand.devs <- rbind(trait.rand.devs, deviances.rand)
 }
 
-#all.p.values <- rowSums((trait.rand.devs - all.deviance.factor) < all.deviance)/number.rands
 all.p.values <- rowSums(trait.rand.devs < all.deviance)/number.rands
 
-deviance.table <- as.data.frame(as.numeric(format(round(all.deviance, 0), nsmall = 0)), row.names = rownames(stats.categories))
+deviance.table <- as.data.frame(as.numeric(format(round(all.deviance-all.deviance.factor, 0), nsmall = 0)), row.names = rownames(stats.categories))
 colnames(deviance.table) <- "Deviance"
 
 df.table <- as.data.frame(as.numeric(format(round(all.df, 0), nsmall = 0)), row.names = rownames(stats.categories))
